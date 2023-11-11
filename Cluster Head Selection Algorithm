@@ -1,0 +1,47 @@
+import pandas as pd
+import random
+
+data = pd.read_csv("vanet_data_500_l1.csv")
+
+vehicle_type_mapping = {"car": 1, "bus": 2, "truck": 3, "police vehicle": 4}
+
+data["Vehicle_Type_Int"] = data["Vehicle_Type"].map(vehicle_type_mapping)
+
+num_iterations = 1
+probability_same_vehicle = 0.7
+
+best_cluster_head = None
+best_score = -1
+
+for _ in range(num_iterations):
+    dynamic_weights = [random.uniform(0, 1) for _ in range(5)]
+    total_weight = sum(dynamic_weights)
+    dynamic_weights = [w / total_weight for w in dynamic_weights]
+
+    data["CH_Score"] = (
+        dynamic_weights[0] * data["Velocity (m/s)"] +
+        dynamic_weights[1] * data["Acceleration (m/s^2)"] +
+        dynamic_weights[2] * data["Eccentricity"] +
+        dynamic_weights[3] * data["Community Neighborhood"] +
+        dynamic_weights[4] * data["Vehicle_Type_Int"]
+    )
+
+    if best_cluster_head is not None:
+        data.loc[data["Vehicle_ID"] == best_cluster_head["Vehicle_ID"].values[0], "CH_Score"] += 10
+
+    data.loc[data["Velocity (m/s)"] == 0, "CH_Score"] += 7
+
+    data.loc[data["Vehicle_Type"] == "police vehicle", "CH_Score"] += 4
+
+    cluster_head = data[data["CH_Score"] == data["CH_Score"].max()]
+
+    if cluster_head["CH_Score"].values[0] > best_score:
+        best_cluster_head = cluster_head
+        best_score = cluster_head["CH_Score"].values[0]
+
+    if random.random() < probability_same_vehicle:
+        cluster_head = best_cluster_head
+
+print("Dynamic Weights for Parameters (w1 to w5):", dynamic_weights)
+print("\nSelected Dynamic and Stable Cluster Head:")
+print(cluster_head)
