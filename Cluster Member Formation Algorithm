@@ -1,0 +1,13 @@
+import pandas as pd
+
+data = pd.read_csv("vanet_data_50_l1.csv")
+
+rsu_location = [22.25360429869858, 84.83712802524929]  
+min_velocity = -30.0 
+max_velocity = 30.0  
+threshold_distance = 20.0  
+
+clustered_vehicles = data[(data["Distance from RSU (m)"] <= threshold_distance) & (data["Velocity (m/s)"] >= min_velocity) & (data["Velocity (m/s)"] <= max_velocity)]
+
+print("Vehicles forming a cluster around RSU:")
+print(clustered_vehicles)
